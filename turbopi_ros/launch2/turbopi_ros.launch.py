@@ -1,15 +1,15 @@
 import os
+import subprocess
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, OpaqueFunction, RegisterEventHandler
-from launch.event_handlers import OnProcessExit, OnProcessStart, OnShutdown
+from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.launch_context import LaunchContext
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 
-import subprocess
 
 def launch_setup(context: LaunchContext):
 
@@ -22,7 +22,7 @@ def launch_setup(context: LaunchContext):
     camera_params_file = os.path.join(pkg_path, 'config', 'camera.yaml')
     slam_params_file = os.path.join(pkg_path, 'config', 'slam_toolbox.yaml')
     controller_params = os.path.join(pkg_path, 'config', 'turbopi_controllers.yaml')
-    xacro_file = os.path.join(pkg_path,'description',filename)
+    xacro_file = os.path.join(pkg_path, 'description', filename)
 
     robot_description_content = Command(
         [
@@ -76,7 +76,7 @@ def launch_setup(context: LaunchContext):
     slam_toolbox_node = Node(
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
-        parameters=[ slam_params_file, {'use_sim_time': True} ],
+        parameters=[slam_params_file, {'use_sim_time': True}],
     )
 
     battery_node = Node(
@@ -98,14 +98,7 @@ def launch_setup(context: LaunchContext):
     )
 
     start_lidar = ExecuteProcess(
-        cmd=[
-            [
-                FindExecutable(name="ros2"),
-                " service call ",
-                "/start_motor ",
-                "std_srvs/srv/Empty",
-            ]
-        ],
+        cmd="ros2 service call /start_motor std_srvs/srv/Empty",
         shell=True,
     )
 
@@ -113,15 +106,13 @@ def launch_setup(context: LaunchContext):
         package='v4l2_camera',
         executable='v4l2_camera_node',
         parameters=[camera_params_file],
-        remappings=[('/image_raw', '/camera'),],
+        remappings=[('/image_raw', '/camera')],
     )
 
-    # Teleoperation node (keyboard control)
     teleop_node = Node(
         package='teleop_twist_keyboard',
         executable='teleop_twist_keyboard',
         output='screen',
-        parameters=[],
         remappings=[('/cmd_vel', '/cmd_vel')],
     )
 
@@ -196,7 +187,7 @@ def launch_setup(context: LaunchContext):
         delayed_infrared_node_spawner,
         delayed_sonar_node_spawner,
         delayed_v4l2_camera_node,
-        teleop_node,  # Add teleop_twist_keyboard node here
+        teleop_node,
         stop_lidar_on_shutdown,
     ]
 
@@ -208,14 +199,12 @@ def stop_lidar(context: LaunchContext):
 
 
 def generate_launch_description():
-    # Declare arguments
-    declared_arguments = []
-    declared_arguments.append(
+    declared_arguments = [
         DeclareLaunchArgument(
             "sim",
             default_value="False",
             description="Start with simulated mock hardware",
         )
-    )
+    ]
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])
