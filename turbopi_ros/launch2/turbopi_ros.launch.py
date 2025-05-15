@@ -98,9 +98,10 @@ def launch_setup(context: LaunchContext):
     )
 
     start_lidar = ExecuteProcess(
-        cmd="ros2 service call /start_motor std_srvs/srv/Empty",
-        shell=True,
+    cmd=["ros2", "service", "call", "/start_motor", "std_srvs/srv/Empty"],
+    shell=False,
     )
+
 
     v4l2_camera_node = Node(
         package='v4l2_camera',
