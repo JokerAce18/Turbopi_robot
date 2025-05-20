@@ -1,0 +1,210 @@
+# ROS 2 Navigation 2 parameters for Mecanum-wheeled rover
+
+amcl:
+  ros__parameters:
+    use_sim_time: true
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    alpha5: 0.2
+    base_frame_id: "base_link"
+    beam_skip_distance: 0.5
+    do_beamskip: true
+    global_frame_id: "map"
+    lambda_short: 0.1
+    laser_max_range: 12.0
+    laser_min_range: 0.05
+    laser_model_type: "likelihood_field"
+    max_beams: 60
+    max_particles: 3000
+    min_particles: 500
+    odom_alpha1: 0.2
+    odom_alpha2: 0.2
+    odom_alpha3: 0.2
+    odom_alpha4: 0.2
+    odom_alpha5: 0.2
+    odom_frame_id: "odom"
+    resample_interval: 2
+    robot_model_type: "differential"
+    scan_topic: "scan"
+    transform_tolerance: 0.5
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    global_frame: "map"
+    robot_base_frame: "base_link"
+    default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
+    plugin_lib_names:
+      - nav2_compute_path_to_pose_action_bt_node
+      - nav2_follow_path_action_bt_node
+      - nav2_recovery_node_bt_node
+      - nav2_wait_action_bt_node
+      - nav2_clear_costmap_service_bt_node
+      - nav2_is_stuck_condition_bt_node
+      - nav2_goal_reached_condition_bt_node
+      - nav2_goal_updated_condition_bt_node
+      - nav2_initial_pose_received_condition_bt_node
+      - nav2_path_expiring_timer_condition_bt_node
+      - nav2_rate_controller_bt_node
+      - nav2_distance_controller_bt_node
+      - nav2_speed_controller_bt_node
+      - nav2_truncate_path_action_bt_node
+      - nav2_back_up_action_bt_node
+      - nav2_spin_action_bt_node
+      - nav2_wait_action_bt_node
+      - nav2_drive_on_heading_bt_node
+      - nav2_look_at_action_bt_node
+      - nav2_follow_path_action_bt_node
+
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      min_vel_x: -0.26
+      min_vel_y: -0.26
+      max_vel_x:  0.26
+      max_vel_y:  0.26
+      max_vel_theta: 1.5
+      min_speed_xy: 0.0
+      max_speed_xy: 0.26
+      min_speed_theta: 0.4
+      acc_lim_x: 1.0
+      acc_lim_y: 1.0
+      acc_lim_theta: 1.0
+      decel_lim_x: -1.0
+      decel_lim_y: -1.0
+      decel_lim_theta: -1.0
+      vx_samples: 20
+      vy_samples: 20
+      vtheta_samples: 20
+      sim_time: 2.0
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      xy_goal_tolerance: 0.2
+      yaw_goal_tolerance: 0.1
+      trans_stopped_velocity: 0.01
+      theta_stopped_velocity: 0.01
+      critics: ["RotateToGoal", "ObstacleFootprint", "PathAlign", "GoalAlign"]
+      PathAlign.scale: 32.0
+      GoalAlign.scale: 24.0
+      ObstacleFootprint.scale: 0.02
+      RotateToGoal.scale: 32.0
+
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: true
+      allow_unknown: true
+
+map_server:
+  ros__parameters:
+    use_sim_time: true
+    yaml_filename: "map.yaml"
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 10.0
+      publish_frequency: 10.0
+      global_frame: "odom"
+      robot_base_frame: "base_link"
+      use_sim_time: true
+      rolling_window: true
+      width: 3.0
+      height: 3.0
+      resolution: 0.05
+      footprint: "[[0.15, 0.15], [0.15, -0.15], [-0.15, -0.15], [-0.15, 0.15]]"
+      plugins: ["obstacle_layer", "inflation_layer"]
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        max_obstacle_height: 2.0
+        min_obstacle_height: 0.0
+        observation_sources: scan
+        scan:
+          topic: scan
+          sensor_frame: lidar_link
+          observation_persistence: 0.0
+          expected_update_rate: 0.1
+          data_type: LaserScan
+          clearing: true
+          marking: true
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 2.0
+        inflation_radius: 0.5
+
+  local_costmap_client:
+    ros__parameters:
+      use_sim_time: true
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: "map"
+      robot_base_frame: "base_link"
+      use_sim_time: true
+      width: 10.0
+      height: 10.0
+      resolution: 0.05
+      footprint: "[[0.15, 0.15], [0.15, -0.15], [-0.15, -0.15], [-0.15, 0.15]]"
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+        enabled: true
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        max_obstacle_height: 2.0
+        min_obstacle_height: 0.0
+        observation_sources: scan
+        scan:
+          topic: scan
+          sensor_frame: lidar_link
+          observation_persistence: 0.0
+          expected_update_rate: 0.1
+          data_type: LaserScan
+          clearing: true
+          marking: true
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 2.0
+        inflation_radius: 0.5
+
+  global_costmap_client:
+    ros__parameters:
+      use_sim_time: true
+
+recoveries_server:
+  ros__parameters:
+    use_sim_time: true
+    recovery_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_recoveries/Spin"
+    backup:
+      plugin: "nav2_recoveries/BackUp"
+    wait:
+      plugin: "nav2_recoveries/Wait"
+
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: true
+    stop_on_failure: false
+    loop_rate: 20
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: true
+      waypoint_pause_duration: 0
+
